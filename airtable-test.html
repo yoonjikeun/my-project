@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Airtable DB 테스트</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: "Segoe UI", "Malgun Gothic", sans-serif; max-width: 640px; margin: 40px auto; padding: 0 16px; color: #222; }
+    h1 { font-size: 1.6rem; }
+    .row { display: flex; gap: 8px; margin: 16px 0; }
+    input[type=text] { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; }
+    button { padding: 10px 14px; border: 0; border-radius: 8px; background: #764ba2; color: #fff; cursor: pointer; font-size: 0.95rem; }
+    button.del { background: #e74c3c; padding: 6px 10px; }
+    ul { list-style: none; padding: 0; }
+    li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 8px; }
+    li span { flex: 1; }
+    li.done span { text-decoration: line-through; color: #999; }
+    #status { color: #888; font-size: 0.9rem; min-height: 1.2em; }
+    .note { background: #fff7e6; border: 1px solid #ffd591; padding: 12px; border-radius: 8px; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>📋 Airtable 할 일 목록 (DB 테스트)</h1>
+
+  <!-- ▼▼▼ 여기 3개 값만 본인 걸로 채우세요 ▼▼▼ -->
+  <script>
+    const CONFIG = {
+      TOKEN: "여기에_Airtable_토큰_붙여넣기",   // Airtable Personal Access Token (pat...)
+      BASE_ID: "여기에_Base_ID_붙여넣기",        // 예: appXXXXXXXXXXXXXX
+      TABLE: "Todos"                            // 테이블 이름 (예: Todos)
+    };
+  </script>
+  <!-- ▲▲▲ 위 3개 값만 채우면 됩니다 ▲▲▲ -->
+
+  <div class="note">
+    ⚠️ 테스트용입니다. 이 토큰은 브라우저 코드에 그대로 노출되니, <b>읽기/쓰기 권한을 이 베이스 하나로만 제한</b>한
+    임시 토큰을 쓰세요. 실서비스엔 그대로 쓰지 마세요.
+  </div>
+
+  <div class="row">
+    <input type="text" id="newItem" placeholder="할 일을 입력하고 추가">
+    <button onclick="addItem()">추가</button>
+  </div>
+
+  <div id="status">불러오는 중...</div>
+  <ul id="list"></ul>
+
+  <script>
+    const API = `https://api.airtable.com/v0/${CONFIG.BASE_ID}/${encodeURIComponent(CONFIG.TABLE)}`;
+    const headers = {
+      "Authorization": `Bearer ${CONFIG.TOKEN}`,
+      "Content-Type": "application/json"
+    };
+    const statusEl = document.getElementById("status");
+    const listEl = document.getElementById("list");
+
+    function setStatus(msg) { statusEl.textContent = msg; }
+
+    // 목록 불러오기 (READ)
+    async function load() {
+      setStatus("불러오는 중...");
+      try {
+        const res = await fetch(API, { headers });
+        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+        const data = await res.json();
+        render(data.records);
+        setStatus(`${data.records.length}개 항목`);
+      } catch (e) {
+        setStatus("오류: " + e.message + " (설정값 3개를 확인하세요)");
+      }
+    }
+
+    function render(records) {
+      listEl.innerHTML = "";
+      records.forEach(rec => {
+        const name = rec.fields.Name || "";
+        const done = !!rec.fields.Done;
+        const li = document.createElement("li");
+        if (done) li.classList.add("done");
+        li.innerHTML = `
+          <input type="checkbox" ${done ? "checked" : ""} onchange="toggle('${rec.id}', this.checked)">
+          <span>${name.replace(/</g, "&lt;")}</span>
+          <button class="del" onclick="removeItem('${rec.id}')">삭제</button>
+        `;
+        listEl.appendChild(li);
+      });
+    }
+
+    // 추가 (CREATE)
+    async function addItem() {
+      const input = document.getElementById("newItem");
+      const value = input.value.trim();
+      if (!value) return;
+      setStatus("추가 중...");
+      try {
+        const res = await fetch(API, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ fields: { Name: value, Done: false } })
+        });
+        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+        input.value = "";
+        await load();
+      } catch (e) {
+        setStatus("추가 실패: " + e.message);
+      }
+    }
+
+    // 완료 토글 (UPDATE)
+    async function toggle(id, checked) {
+      try {
+        const res = await fetch(`${API}/${id}`, {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify({ fields: { Done: checked } })
+        });
+        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+        await load();
+      } catch (e) {
+        setStatus("수정 실패: " + e.message);
+      }
+    }
+
+    // 삭제 (DELETE)
+    async function removeItem(id) {
+      if (!confirm("삭제할까요?")) return;
+      try {
+        const res = await fetch(`${API}/${id}`, { method: "DELETE", headers });
+        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+        await load();
+      } catch (e) {
+        setStatus("삭제 실패: " + e.message);
+      }
+    }
+
+    load();
+  </script>
+</body>
+</html>
