@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supabase 로그인 + DB 테스트</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: "Segoe UI", "Malgun Gothic", sans-serif; max-width: 560px; margin: 40px auto; padding: 0 16px; color: #222; }
+    h1 { font-size: 1.5rem; }
+    h2 { font-size: 1.1rem; margin-top: 28px; }
+    input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; margin: 6px 0; }
+    button { padding: 10px 14px; border: 0; border-radius: 8px; background: #3ecf8e; color: #053; cursor: pointer; font-size: 0.95rem; font-weight: 600; }
+    button.secondary { background: #eee; color: #333; }
+    button.del { background: #e74c3c; color: #fff; padding: 6px 10px; }
+    .row { display: flex; gap: 8px; }
+    .row input { margin: 0; }
+    ul { list-style: none; padding: 0; }
+    li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 8px; }
+    li span { flex: 1; }
+    .hidden { display: none; }
+    #status { color: #888; font-size: 0.9rem; min-height: 1.2em; margin: 10px 0; }
+    .card { border: 1px solid #eee; border-radius: 12px; padding: 16px; }
+    .who { background: #eafaf1; border: 1px solid #b7e4cd; padding: 10px 12px; border-radius: 8px; font-size: 0.95rem; }
+  </style>
+</head>
+<body>
+  <h1>🔐 Supabase 로그인 + DB 테스트</h1>
+
+  <!-- Supabase의 anon key는 공개용이라 사이트에 넣어도 안전합니다 (접근제어는 RLS로). -->
+  <script>
+    const SUPABASE_URL = "여기에_Supabase_프로젝트_URL_붙여넣기";   // 예: https://xxxxx.supabase.co
+    const SUPABASE_ANON_KEY = "여기에_anon_public_key_붙여넣기";    // eyJhbGci... (anon/public)
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <div id="status"></div>
+
+  <!-- 로그아웃 상태: 회원가입 / 로그인 -->
+  <div id="authBox" class="card">
+    <h2>회원가입 / 로그인</h2>
+    <input type="email" id="email" placeholder="이메일">
+    <input type="password" id="password" placeholder="비밀번호 (6자 이상)">
+    <div class="row">
+      <button onclick="signUp()">회원가입</button>
+      <button class="secondary" onclick="signIn()">로그인</button>
+    </div>
+  </div>
+
+  <!-- 로그인 상태: 사용자 정보 + 내 메모 CRUD -->
+  <div id="appBox" class="hidden">
+    <div class="who">
+      로그인됨: <b id="userEmail"></b>
+      <button class="secondary" style="float:right" onclick="signOut()">로그아웃</button>
+    </div>
+
+    <h2>📝 내 메모 (나만 볼 수 있음)</h2>
+    <div class="row">
+      <input type="text" id="newMemo" placeholder="메모를 입력하고 추가">
+      <button onclick="addMemo()">추가</button>
+    </div>
+    <ul id="memoList"></ul>
+  </div>
+
+  <script>
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const $ = id => document.getElementById(id);
+    const setStatus = m => { $("status").textContent = m; };
+
+    // ---- 인증 ----
+    async function signUp() {
+      const email = $("email").value.trim();
+      const password = $("password").value;
+      setStatus("회원가입 중...");
+      const { error } = await sb.auth.signUp({ email, password });
+      if (error) return setStatus("회원가입 실패: " + error.message);
+      setStatus("회원가입 완료! (이메일 확인이 필요한 설정이면 메일을 확인하세요)");
+    }
+
+    async function signIn() {
+      const email = $("email").value.trim();
+      const password = $("password").value;
+      setStatus("로그인 중...");
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) return setStatus("로그인 실패: " + error.message);
+      setStatus("");
+    }
+
+    async function signOut() {
+      await sb.auth.signOut();
+      setStatus("로그아웃되었습니다.");
+    }
+
+    // 로그인 상태 변화 감지 → 화면 전환
+    sb.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        $("authBox").classList.add("hidden");
+        $("appBox").classList.remove("hidden");
+        $("userEmail").textContent = session.user.email;
+        loadMemos();
+      } else {
+        $("appBox").classList.add("hidden");
+        $("authBox").classList.remove("hidden");
+        $("memoList").innerHTML = "";
+      }
+    });
+
+    // ---- 내 메모 CRUD (RLS로 본인 것만 접근 가능) ----
+    async function loadMemos() {
+      const { data, error } = await sb.from("memos")
+        .select("*").order("created_at", { ascending: false });
+      if (error) return setStatus("메모 불러오기 실패: " + error.message);
+      renderMemos(data);
+      setStatus(`${data.length}개 메모`);
+    }
+
+    function renderMemos(memos) {
+      const ul = $("memoList");
+      ul.innerHTML = "";
+      memos.forEach(m => {
+        const li = document.createElement("li");
+        li.innerHTML = `<span>${String(m.content ?? "").replace(/</g, "&lt;")}</span>
+          <button class="del" onclick="deleteMemo('${m.id}')">삭제</button>`;
+        ul.appendChild(li);
+      });
+    }
+
+    async function addMemo() {
+      const content = $("newMemo").value.trim();
+      if (!content) return;
+      setStatus("추가 중...");
+      // user_id는 DB에서 default auth.uid()로 자동 채워짐
+      const { error } = await sb.from("memos").insert({ content });
+      if (error) return setStatus("추가 실패: " + error.message);
+      $("newMemo").value = "";
+      loadMemos();
+    }
+
+    async function deleteMemo(id) {
+      const { error } = await sb.from("memos").delete().eq("id", id);
+      if (error) return setStatus("삭제 실패: " + error.message);
+      loadMemos();
+    }
+
+    // 페이지 로드 시 기존 세션 복원
+    (async () => {
+      const { data } = await sb.auth.getSession();
+      if (!data.session) setStatus("로그인하거나 회원가입하세요.");
+    })();
+  </script>
+</body>
+</html>
