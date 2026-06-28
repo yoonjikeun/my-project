@@ -56,6 +56,7 @@
 
     const esc = s => String(s ?? "").replace(/</g, "&lt;");
     const setStatus = msg => { statusEl.textContent = msg; };
+    let currentRecords = [];   // 수정 모드에서 원본 값 참조용
 
     // 목록 불러오기 (READ)
     async function load() {
@@ -64,26 +65,71 @@
         const res = await fetch(API, { headers });
         if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
         const data = await res.json();
-        render(data.records);
+        currentRecords = data.records;
+        render(currentRecords);
         setStatus(`${data.records.length}개 레코드`);
       } catch (e) {
         setStatus("오류: " + e.message);
       }
     }
 
+    // 일반 표시 행
     function render(records) {
       rowsEl.innerHTML = "";
       records.forEach(rec => {
         const f = rec.fields;
         const tr = document.createElement("tr");
+        tr.id = "row-" + rec.id;
         tr.innerHTML = `
           <td>${esc(f["필드명"])}</td>
           <td>${esc(f["타입"])}</td>
           <td>${esc(f["설명"])}</td>
-          <td><button class="del" onclick="removeItem('${rec.id}')">삭제</button></td>
+          <td>
+            <button onclick="editRow('${rec.id}')">수정</button>
+            <button class="del" onclick="removeItem('${rec.id}')">삭제</button>
+          </td>
         `;
         rowsEl.appendChild(tr);
       });
+    }
+
+    // 행을 입력칸으로 전환 (수정 모드)
+    function editRow(id) {
+      const rec = currentRecords.find(r => r.id === id);
+      if (!rec) return;
+      const f = rec.fields;
+      const tr = document.getElementById("row-" + id);
+      tr.innerHTML = `
+        <td><input type="text" id="e_name_${id}" value="${esc(f["필드명"])}"></td>
+        <td><input type="text" id="e_type_${id}" value="${esc(f["타입"])}"></td>
+        <td><input type="text" id="e_desc_${id}" value="${esc(f["설명"])}"></td>
+        <td>
+          <button onclick="saveEdit('${id}')">저장</button>
+          <button class="del" onclick="load()">취소</button>
+        </td>
+      `;
+    }
+
+    // 수정 저장 (UPDATE / PATCH)
+    async function saveEdit(id) {
+      const name = document.getElementById("e_name_" + id).value.trim();
+      const type = document.getElementById("e_type_" + id).value.trim();
+      const desc = document.getElementById("e_desc_" + id).value.trim();
+      setStatus("수정 중...");
+      try {
+        const res = await fetch(`${API}/${id}`, {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify({
+            fields: { "필드명": name, "타입": type, "설명": desc },
+            typecast: true
+          })
+        });
+        if (!res.ok) throw new Error(`${res.status} ${res.statusText} — ${await res.text()}`);
+        await load();
+      } catch (e) {
+        setStatus("수정 실패: " + e.message);
+      }
     }
 
     // 추가 (CREATE)
