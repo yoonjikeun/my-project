@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "bash",
+            "command": "git add -A && { git diff --cached --quiet || git commit -m \"auto-commit: $(date '+%Y-%m-%d %H:%M:%S')\"; }; true",
+            "statusMessage": "변경사항 자동 커밋 중..."
+          }
+        ]
+      }
+    ]
+  }
+}
