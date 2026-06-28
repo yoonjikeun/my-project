@@ -6,38 +6,44 @@
   <title>Airtable DB 테스트</title>
   <style>
     * { box-sizing: border-box; }
-    body { font-family: "Segoe UI", "Malgun Gothic", sans-serif; max-width: 640px; margin: 40px auto; padding: 0 16px; color: #222; }
+    body { font-family: "Segoe UI", "Malgun Gothic", sans-serif; max-width: 720px; margin: 40px auto; padding: 0 16px; color: #222; }
     h1 { font-size: 1.6rem; }
-    .row { display: flex; gap: 8px; margin: 16px 0; }
-    input[type=text] { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; }
+    .form { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 8px; margin: 16px 0; }
+    input[type=text] { padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 0.95rem; }
     button { padding: 10px 14px; border: 0; border-radius: 8px; background: #764ba2; color: #fff; cursor: pointer; font-size: 0.95rem; }
     button.del { background: #e74c3c; padding: 6px 10px; }
-    ul { list-style: none; padding: 0; }
-    li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 8px; }
-    li span { flex: 1; }
-    li.done span { text-decoration: line-through; color: #999; }
-    #status { color: #888; font-size: 0.9rem; min-height: 1.2em; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #eee; font-size: 0.95rem; }
+    th { color: #555; font-size: 0.85rem; }
+    #status { color: #888; font-size: 0.9rem; min-height: 1.2em; margin-top: 10px; }
     .note { background: #fff7e6; border: 1px solid #ffd591; padding: 12px; border-radius: 8px; font-size: 0.9rem; }
   </style>
 </head>
 <body>
-  <h1>📋 Airtable 할 일 목록 (DB 테스트)</h1>
+  <h1>☕ Airtable DB 테스트 — Jobmongz1</h1>
 
   <!-- 토큰 등 설정값은 config.js (gitignore됨)에서 불러옵니다. -->
   <script src="config.js"></script>
 
   <div class="note">
-    ⚠️ 테스트용입니다. 이 토큰은 브라우저 코드에 그대로 노출되니, <b>읽기/쓰기 권한을 이 베이스 하나로만 제한</b>한
-    임시 토큰을 쓰세요. 실서비스엔 그대로 쓰지 마세요.
+    ⚠️ 테스트용입니다. 토큰이 브라우저 코드에 노출되니 로컬에서만 사용하고, 끝나면 Airtable에서 토큰을 폐기(revoke)하세요.
   </div>
 
-  <div class="row">
-    <input type="text" id="newItem" placeholder="할 일을 입력하고 추가">
+  <div class="form">
+    <input type="text" id="f_name" placeholder="필드명">
+    <input type="text" id="f_type" placeholder="타입">
+    <input type="text" id="f_desc" placeholder="설명">
     <button onclick="addItem()">추가</button>
   </div>
 
   <div id="status">불러오는 중...</div>
-  <ul id="list"></ul>
+
+  <table>
+    <thead>
+      <tr><th>필드명</th><th>타입</th><th>설명</th><th></th></tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
 
   <script>
     const API = `https://api.airtable.com/v0/${CONFIG.BASE_ID}/${encodeURIComponent(CONFIG.TABLE)}`;
@@ -46,9 +52,10 @@
       "Content-Type": "application/json"
     };
     const statusEl = document.getElementById("status");
-    const listEl = document.getElementById("list");
+    const rowsEl = document.getElementById("rows");
 
-    function setStatus(msg) { statusEl.textContent = msg; }
+    const esc = s => String(s ?? "").replace(/</g, "&lt;");
+    const setStatus = msg => { statusEl.textContent = msg; };
 
     // 목록 불러오기 (READ)
     async function load() {
@@ -58,60 +65,50 @@
         if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
         const data = await res.json();
         render(data.records);
-        setStatus(`${data.records.length}개 항목`);
+        setStatus(`${data.records.length}개 레코드`);
       } catch (e) {
-        setStatus("오류: " + e.message + " (설정값 3개를 확인하세요)");
+        setStatus("오류: " + e.message);
       }
     }
 
     function render(records) {
-      listEl.innerHTML = "";
+      rowsEl.innerHTML = "";
       records.forEach(rec => {
-        const name = rec.fields.Name || "";
-        const done = !!rec.fields.Done;
-        const li = document.createElement("li");
-        if (done) li.classList.add("done");
-        li.innerHTML = `
-          <input type="checkbox" ${done ? "checked" : ""} onchange="toggle('${rec.id}', this.checked)">
-          <span>${name.replace(/</g, "&lt;")}</span>
-          <button class="del" onclick="removeItem('${rec.id}')">삭제</button>
+        const f = rec.fields;
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${esc(f["필드명"])}</td>
+          <td>${esc(f["타입"])}</td>
+          <td>${esc(f["설명"])}</td>
+          <td><button class="del" onclick="removeItem('${rec.id}')">삭제</button></td>
         `;
-        listEl.appendChild(li);
+        rowsEl.appendChild(tr);
       });
     }
 
     // 추가 (CREATE)
     async function addItem() {
-      const input = document.getElementById("newItem");
-      const value = input.value.trim();
-      if (!value) return;
+      const name = document.getElementById("f_name").value.trim();
+      const type = document.getElementById("f_type").value.trim();
+      const desc = document.getElementById("f_desc").value.trim();
+      if (!name) { setStatus("필드명은 필수입니다."); return; }
       setStatus("추가 중...");
       try {
         const res = await fetch(API, {
           method: "POST",
           headers,
-          body: JSON.stringify({ fields: { Name: value, Done: false } })
+          body: JSON.stringify({
+            fields: { "필드명": name, "타입": type, "설명": desc },
+            typecast: true
+          })
         });
-        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-        input.value = "";
+        if (!res.ok) throw new Error(`${res.status} ${res.statusText} — ${await res.text()}`);
+        document.getElementById("f_name").value = "";
+        document.getElementById("f_type").value = "";
+        document.getElementById("f_desc").value = "";
         await load();
       } catch (e) {
         setStatus("추가 실패: " + e.message);
-      }
-    }
-
-    // 완료 토글 (UPDATE)
-    async function toggle(id, checked) {
-      try {
-        const res = await fetch(`${API}/${id}`, {
-          method: "PATCH",
-          headers,
-          body: JSON.stringify({ fields: { Done: checked } })
-        });
-        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-        await load();
-      } catch (e) {
-        setStatus("수정 실패: " + e.message);
       }
     }
 
