@@ -1,0 +1,12 @@
+{
+  "name": "my-cards-export",
+  "version": "1.0.0",
+  "private": true,
+  "description": "카드뉴스 HTML → 1080×1080 PNG 추출",
+  "scripts": {
+    "export": "node export.js"
+  },
+  "dependencies": {
+    "playwright-core": "^1.61.1"
+  }
+}
