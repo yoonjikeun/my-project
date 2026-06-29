@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Card News — Sample BLUE (1080×1080)</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Fonts: 영문 디스플레이(Montserrat) + 한글(Pretendard) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['Montserrat', 'Pretendard', 'sans-serif'],
+            body: ['Pretendard', 'Montserrat', 'sans-serif'],
+          },
+          colors: {
+            sky:    '#AFC9DE',   // 파스텔 블루 배경 (레퍼런스 ②)
+            navy:   '#2B3A4A',   // 깊은 네이비 먹색
+            steel:  '#6E83969E', // 흐린 보조 (반투명)
+            cream:  '#F3EFE3',   // 따뜻한 크림 악센트 (브라운 결을 한 방울)
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    body { background:#9fb6c8; }
+    .stage {
+      display:flex; align-items:center; justify-content:center;
+      min-height:100vh; padding:24px;
+    }
+    .card {
+      width:1080px; height:1080px;
+      flex:0 0 auto;
+      transform: scale(var(--s, 1));
+      transform-origin: center center;
+    }
+    /* 사진 자리 — 블루 톤온톤 플레이스홀더 */
+    .photo-ph {
+      background:
+        radial-gradient(120% 90% at 70% 20%, #C2D5E4 0%, #A6BFD3 45%, #90AECA 100%);
+    }
+  </style>
+</head>
+<body class="font-body text-navy">
+
+  <div class="stage">
+    <!-- ===================== 1080 × 1080 CARD ===================== -->
+    <div class="card bg-sky relative overflow-hidden">
+
+      <div class="absolute inset-0 flex flex-col px-24 pt-24">
+
+        <!-- 상단: 날짜 블록 + 북마크 -->
+        <div class="flex items-start justify-between">
+          <div class="flex items-end gap-3">
+            <span class="font-display font-black leading-none text-[88px] tracking-tight">29</span>
+            <div class="font-display font-bold leading-tight text-[22px] pb-2">
+              <div>JUNE</div>
+              <div class="text-navy/55">2026</div>
+            </div>
+          </div>
+          <svg width="38" height="48" viewBox="0 0 24 30" fill="none" class="mt-2">
+            <path d="M3 2h18v26l-9-6-9 6V2z" stroke="#2B3A4A" stroke-width="2" stroke-linejoin="round"/>
+          </svg>
+        </div>
+
+        <!-- 작은 키커 (②의 대문자 키커 차용) -->
+        <div class="font-display font-semibold tracking-[0.25em] text-[22px] text-navy/60 mt-16">
+          THE BEST MOMENT EVER WITH
+        </div>
+
+        <!-- 헤드라인 -->
+        <h1 class="font-display font-black tracking-tight leading-[0.92] mt-3 text-[132px]">
+          Reminder<br/>today
+          <span class="block w-40 h-[6px] bg-navy mt-6"></span>
+        </h1>
+
+        <!-- 본문 -->
+        <p class="font-body text-[34px] leading-[1.5] text-navy/85 mt-10 max-w-[760px]">
+          잘 해내지 않아도 괜찮아.<br/>
+          오늘 하루를 무사히 지나온 것만으로<br/>
+          이미 충분히 잘하고 있는 거야.
+        </p>
+        <p class="font-body text-[26px] text-navy/55 mt-8">— 어떤 사람의 메모</p>
+
+        <!-- 크레딧 -->
+        <div class="mt-auto mb-7 flex items-end justify-between font-display text-[22px]">
+          <div class="leading-tight">
+            <div class="text-navy/55">card by</div>
+            <div class="font-bold">my-cards</div>
+          </div>
+          <div class="leading-tight text-right">
+            <div class="text-navy/55">pict by</div>
+            <div class="font-bold">references</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 하단 사진 밴드 -->
+      <div class="photo-ph absolute bottom-0 left-0 right-0 h-[388px] flex items-center justify-center">
+        <div class="text-center text-navy/45 font-body">
+          <div class="text-[28px] font-semibold">여기에 사진</div>
+          <div class="text-[20px] mt-1">references/ 의 톤온톤 컷을 넣으세요</div>
+        </div>
+      </div>
+
+    </div>
+    <!-- =========================================================== -->
+  </div>
+
+  <script>
+    function fit() {
+      const pad = 48;
+      const s = Math.min(1, (window.innerWidth - pad) / 1080, (window.innerHeight - pad) / 1080);
+      document.documentElement.style.setProperty('--s', s.toFixed(3));
+    }
+    window.addEventListener('resize', fit);
+    fit();
+  </script>
+</body>
+</html>
