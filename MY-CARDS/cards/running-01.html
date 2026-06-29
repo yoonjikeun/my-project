@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>러닝의 효과 01 — 표지</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <script>
+    tailwind.config = {
+      theme: { extend: {
+        fontFamily: { display: ['Montserrat','Pretendard','sans-serif'], body: ['Pretendard','Montserrat','sans-serif'] },
+        colors: { sky:'#AFC9DE', navy:'#2B3A4A', accent:'#E0A93B' },
+      } },
+    };
+  </script>
+  <style>
+    body { background:#9fb6c8; }
+    .stage { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:24px; }
+    .card { width:1080px; height:1080px; flex:0 0 auto; transform:scale(var(--s,1)); transform-origin:center center; }
+  </style>
+</head>
+<body class="font-body text-navy">
+  <div class="stage">
+    <div class="card bg-sky relative overflow-hidden">
+      <div class="absolute inset-0 flex flex-col px-24 pt-20 pb-[316px]">
+
+        <div class="flex items-start justify-between">
+          <div class="flex items-end gap-3">
+            <span class="font-display font-black leading-none text-[80px] tracking-tight">01</span>
+            <div class="font-display font-bold leading-tight text-[22px] pb-2">
+              <div>STEP</div>
+              <div class="text-navy/55">표지</div>
+            </div>
+          </div>
+          <svg width="38" height="48" viewBox="0 0 24 30" fill="none" class="mt-2">
+            <path d="M3 2h18v26l-9-6-9 6V2z" stroke="#2B3A4A" stroke-width="2" stroke-linejoin="round"/>
+          </svg>
+        </div>
+
+        <div class="font-body font-semibold tracking-[0.12em] text-[26px] text-navy/55 mt-12">
+          하루 20분, 운동화 하나면
+        </div>
+
+        <h1 class="font-body font-black tracking-tight leading-[1.05] mt-3 text-[128px]">
+          러닝의 효과
+          <span class="block w-40 h-[6px] bg-accent mt-5"></span>
+        </h1>
+
+        <p class="font-body text-[34px] leading-[1.55] text-navy/85 mt-9 max-w-[820px]">
+          돈도 장비도 거의 안 드는데,<br/>
+          몸과 마음이 통째로 바뀐다.
+        </p>
+
+        <div class="mt-auto mb-6 flex items-end justify-between font-display text-[22px]">
+          <div class="leading-tight">
+            <div class="text-navy/55">series</div>
+            <div class="font-bold">러닝의 효과</div>
+          </div>
+          <div class="font-bold tracking-widest">01 / 05</div>
+        </div>
+      </div>
+
+      <div class="absolute bottom-0 left-0 right-0 h-[300px] overflow-hidden">
+        <img src="../assets/run-01.jpg" alt="" class="w-full h-full object-cover saturate-[.92]" />
+        <div class="absolute inset-0 bg-navy/15"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    function fit(){ const p=48; const s=Math.min(1,(innerWidth-p)/1080,(innerHeight-p)/1080); document.documentElement.style.setProperty('--s',s.toFixed(3)); }
+    addEventListener('resize',fit); fit();
+  </script>
+</body>
+</html>

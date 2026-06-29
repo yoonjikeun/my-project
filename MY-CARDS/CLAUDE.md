@@ -30,13 +30,16 @@ MY-CARDS/
 ├── sample.html            ← 시안: 브라운(크림) 톤 버전 (미채택, 보관용)
 ├── sample-blue.html       ← 시안: 블루 톤 버전 (★ 채택된 디자인 원본)
 │
-├── cards/                 ← 실제 카드 5장 (sample-blue 디자인을 카피별로 적용)
-│   ├── 01.html ~ 05.html
+├── cards/                 ← 실제 카드 (sample-blue 디자인을 카피별로 적용)
+│   ├── 01.html ~ 05.html              ← 「물경력」 시리즈
+│   └── running-01.html ~ running-05.html ← 「러닝의 효과」 시리즈
+│   # 여러 시리즈는 파일명 접두어로 구분 (예: running-, diet- ...). 같은 cards/ 폴더에 공존.
 │
 ├── assets/                ← 카드에 들어가는 사진
-│   ├── photo-blue.jpg     ← 01번(표지)·시안용 블루 커피컷
+│   ├── photo-blue.jpg     ← 물경력 01번(표지)·시안용 블루 커피컷
 │   ├── photo-brown.jpg    ← 브라운 시안용 (cards 미사용)
-│   └── card-02.jpg ~ card-05.jpg  ← 02~05번 카드 사진
+│   ├── card-02.jpg ~ card-05.jpg  ← 물경력 02~05번 사진
+│   └── run-01.jpg ~ run-05.jpg     ← 러닝 01~05번 사진
 │
 ├── out/                   ← 추출된 PNG (생성물, git 무시 권장)
 │   └── 01.png ~ 05.png
@@ -140,10 +143,12 @@ addEventListener('resize',fit); fit();
 ### STEP 6 — PNG 추출
 ```bash
 cd MY-CARDS
-npm install          # 최초 1회 (playwright-core)
-npm run export       # 또는: node export.js
-# → out/01.png ~ 05.png (각 1080×1080)
+npm install              # 최초 1회 (playwright-core)
+node export.js           # cards/ 전체 → out/<같은이름>.png
+node export.js running   # 이름에 'running' 포함된 카드만 추출
+# → out/*.png (각 1080×1080)
 ```
+- `export.js`는 `cards/*.html`을 자동으로 훑어 동일 파일명 PNG로 저장 → **시리즈가 늘어도 코드 수정 불필요.**
 
 ---
 

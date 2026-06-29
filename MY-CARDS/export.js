@@ -8,7 +8,16 @@ const fs = require('fs');
 const { pathToFileURL } = require('url');
 
 const SIZE = 1080;
-const CARDS = ['01', '02', '03', '04', '05'];
+
+// cards/ 안의 모든 *.html 을 같은 이름의 PNG로 추출 (여러 시리즈 공존 가능)
+// 특정 시리즈만 뽑으려면: node export.js running   (이름에 'running' 포함된 것만)
+const filter = process.argv[2];
+const CARDS = fs
+  .readdirSync(path.join(__dirname, 'cards'))
+  .filter((f) => f.endsWith('.html'))
+  .map((f) => path.basename(f, '.html'))
+  .filter((n) => !filter || n.includes(filter))
+  .sort();
 
 (async () => {
   const outDir = path.join(__dirname, 'out');
@@ -43,6 +52,7 @@ const CARDS = ['01', '02', '03', '04', '05'];
 
   await browser.close();
   console.log(`\n완료: ${CARDS.length}장을 out/ 에 저장했습니다.`);
+  if (CARDS.length === 0) console.log('(추출할 카드가 없습니다. 필터를 확인하세요.)');
 })().catch((err) => {
   console.error('추출 실패:', err);
   process.exit(1);
